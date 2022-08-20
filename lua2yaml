@@ -43,9 +43,6 @@ Options:
 
   -h    Print this text
   -v    Print script version
-  -O    Force tables to be serialized as objects
-        (default: off)
-  -e    Do not print terminating EOL (default: do print)
   -r    Prefix "return " to the input before loading (default: do not prefix)
   -G    Do not use global environment protection when loading the data
         (default: do use protection)
@@ -54,7 +51,7 @@ Options:
 
 Notes:
 
-  1. The lua2json by default expects the Lua data to be prefixed with `return`:
+  1. The lua2yaml by default expects the Lua data to be prefixed with `return`:
 
       return { foo = 42 }
 
@@ -72,18 +69,13 @@ Notes:
      Do not use on Lua data that you do not trust.
 
 EOF
-# TODO: Support this!
-#   -n    Do not pretty-print JSON code (default: do pretty-print)
 }
 
-NO_PRETTY_PRINT=true # TODO: Must be false
-FORCE_OBJECTS=false
-SKIP_TERMINATING_EOL=false
 PREFIX_WITH_RETURN=false
 NO_STRICT=false
 EXPOSE_G=false
 
-while getopts ":hvnOerGS" opt; do
+while getopts ":hvrGS" opt; do
   case ${opt} in
     h)
       version
@@ -93,16 +85,6 @@ while getopts ":hvnOerGS" opt; do
     v)
       version
       exit 0
-      ;;
-# TODO: Implement
-#    n)
-#      NO_PRETTY_PRINT=true
-#      ;;
-    O)
-      FORCE_OBJECTS=true
-      ;;
-    e)
-      SKIP_TERMINATING_EOL=true
       ;;
     r)
       PREFIX_WITH_RETURN=true
@@ -126,9 +108,6 @@ done
 
 ${LUA} -e "
 
-local NO_PRETTY_PRINT = ${NO_PRETTY_PRINT}
-local FORCE_OBJECTS = ${FORCE_OBJECTS}
-local SKIP_TERMINATING_EOL = ${SKIP_TERMINATING_EOL}
 local PREFIX_WITH_RETURN = ${PREFIX_WITH_RETURN}
 local NO_STRICT = ${NO_STRICT}
 local EXPOSE_G = ${EXPOSE_G}
@@ -162,7 +141,16 @@ if PREFIX_WITH_RETURN then
   input = 'return ' .. input
 end
 
-local data_fn, err = loadstring(input, '=stdin')
+local env = setmetatable(
+    { },
+    {
+      __metatable = 'lua2yaml.data';
+      __index = index;
+      __newindex = newindex;
+    }
+  )
+
+local data_fn, err = load(input, '=stdin', 'bt', env)
 if not data_fn then
   error('failed to read data: ' .. tostring(err))
 end
@@ -183,7 +171,7 @@ if EXPOSE_G then
     setmetatable(
         _G,
         {
-          __metatable = 'lua2json._G';
+          __metatable = 'lua2yaml._G';
           __index = strict_index;
         }
       )
@@ -207,50 +195,15 @@ local newindex = NO_STRICT
           )
       end
 
-local env = setmetatable(
-    { },
-    {
-      __metatable = 'lua2json.data';
-      __index = index;
-      __newindex = newindex;
-    }
-  )
-
-setfenv(data_fn, env)
-
 local ok, data = xpcall(data_fn, function(msg) return debug.traceback(msg) end)
 if not ok then
   local err = data
   error('failed to load data:\n' .. (err or 'nothing returned'))
 end
 
-local encode_options = nil
-if not NO_PRETTY_PRINT then
-  error('TODO: Implement JSON pretty-printing!')
-end
-
-if FORCE_OBJECTS then
-  encode_options = json_util.merge(
-      {
-        array =
-        {
-          isArray = function() return false end;
-        };
-      },
-      encode_options
-    )
-end
-
-local data, err = json_encode(data, encode_options)
-if err then
-  error('luajson error: ' .. err)
-end
+local data = require('yaml').dump(data)
 
 io.stdout:write(data)
-
-if not SKIP_TERMINATING_EOL then
-  io.stdout:write('\n')
-end
 
 io.stdout:flush()
 

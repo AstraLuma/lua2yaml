@@ -1,8 +1,8 @@
 Release checklist
 =================
 
-1. Synchronize CLI options in lua2json and README.md
-2. Bump VERSION variable in lua2json
+1. Synchronize CLI options in lua2yaml and README.md
+2. Bump VERSION variable in lua2yaml
 3. Add new rockspec.
 4. Add new section to the HISTORY file
 5. Add new git tag with version number and push it with --tags

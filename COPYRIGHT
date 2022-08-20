@@ -1,13 +1,13 @@
-lua2json License
+lua2yaml License
 ----------------
 
-lua2json is licensed under the terms of the MIT license reproduced below.
-This means that lua2json is free software and can be used for both academic
+lua2yaml is licensed under the terms of the MIT license reproduced below.
+This means that lua2yaml is free software and can be used for both academic
 and commercial purposes at absolutely no cost.
 
 ===============================================================================
 
-Copyright (C) 2011 lua2json authors
+Copyright (C) 2022 lua2yaml authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
